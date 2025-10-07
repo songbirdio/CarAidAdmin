@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CarAid | Mechanic Activity Tracker</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Poppins", sans-serif;
+    }
+
+    body {
+      background: #f3f4f6;
+      color: #333;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #0059b3;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: bold;
+    }
+
+    .container {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    /* === PROFILE CARD === */
+    .profile-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-card img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .profile-info h2 {
+      color: #0059b3;
+      font-size: 1.4rem;
+      margin-bottom: 6px;
+    }
+
+    .profile-info p {
+      margin: 4px 0;
+    }
+
+    /* === STATS SECTION === */
+    .stats-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .stat-box {
+      flex: 1 1 200px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s;
+    }
+
+    .stat-box:hover {
+      transform: translateY(-5px);
+    }
+
+    .stat-box h2 {
+      color: #0059b3;
+      font-size: 2rem;
+    }
+
+    /* === CHARTS === */
+    .charts {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+    }
+
+    .chart-container {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      width: 400px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    /* === JOB HISTORY === */
+    .job-history {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background: #0059b3;
+      color: #fff;
+    }
+
+    tr:hover {
+      background: #f0f7ff;
+    }
+
+    footer {
+      text-align: center;
+      padding: 10px;
+      background: #0059b3;
+      color: #fff;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <header>CarAid | Mechanic Activity Tracker</header>
+
+  <div class="container">
+    <!-- === MECHANIC PROFILE === -->
+    <section class="profile-card">
+      <img src="https://via.placeholder.com/100" alt="Mechanic Photo">
+      <div class="profile-info">
+        <h2 id="mechName">Emeka Ugo</h2>
+        <p><strong>Specialization:</strong> Engine Repair</p>
+        <p><strong>Experience:</strong> 7 years</p>
+        <p><strong>Status:</strong> <span style="color:green;">Active</span></p>
+      </div>
+    </section>
+
+    <!-- === STATS === -->
+    <section class="stats-grid">
+      <div class="stat-box">
+        <h2 id="jobsDone">0</h2>
+        <p>Jobs Completed</p>
+      </div>
+      <div class="stat-box">
+        <h2 id="rating">0</h2>
+        <p>Average Rating</p>
+      </div>
+      <div class="stat-box">
+        <h2 id="partsUsed">0</h2>
+        <p>Parts Used</p>
+      </div>
+      <div class="stat-box">
+        <h2 id="earnings">₦0</h2>
+        <p>Total Earnings</p>
+      </div>
+    </section>
+
+    <!-- === CHARTS === -->
+    <section class="charts">
+      <div class="chart-container">
+        <h3>Jobs Completed (Last 6 Months)</h3>
+        <canvas id="jobsChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <h3>Customer Ratings Trend</h3>
+        <canvas id="ratingChart"></canvas>
+      </div>
+    </section>
+
+    <!-- === JOB HISTORY === -->
+    <section class="job-history">
+      <h2>🧾 Recent Job History</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Service</th>
+            <th>Parts Used</th>
+            <th>Amount</th>
+            <th>Customer</th>
+            <th>Rating</th>
+          </tr>
+        </thead>
+        <tbody id="jobHistoryBody"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <footer>© 2025 CarAid Systems</footer>
+
+  <script>
+    // === Example mechanic data ===
+    const mechanicActivity = {
+      name: "Emeka Ugo",
+      specialization: "Engine Repair",
+      experience: "7 years",
+      status: "Active",
+      jobsDone: 126,
+      rating: 4.7,
+      partsUsed: 340,
+      earnings: 1540000,
+      monthlyJobs: [12, 18, 20, 25, 22, 29],
+      monthlyRatings: [4.5, 4.6, 4.7, 4.8, 4.6, 4.9],
+      recentJobs: [
+        { date: "2025-09-30", service: "Engine Overhaul", parts: "Oil filter, pistons", amount: "₦120,000", customer: "John Doe", rating: 4.8 },
+        { date: "2025-09-25", service: "Radiator Replacement", parts: "Radiator, coolant", amount: "₦45,000", customer: "Mary Uche", rating: 4.7 },
+        { date: "2025-09-21", service: "Brake Repair", parts: "Brake pads", amount: "₦30,000", customer: "David James", rating: 4.6 },
+      ],
+    };
+
+    // === Populate stats ===
+    document.getElementById("mechName").textContent = mechanicActivity.name;
+    document.getElementById("jobsDone").textContent = mechanicActivity.jobsDone;
+    document.getElementById("rating").textContent = mechanicActivity.rating;
+    document.getElementById("partsUsed").textContent = mechanicActivity.partsUsed;
+    document.getElementById("earnings").textContent = "₦" + mechanicActivity.earnings.toLocaleString();
+
+    // === Job History Table ===
+    const jobBody = document.getElementById("jobHistoryBody");
+    mechanicActivity.recentJobs.forEach(job => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${job.date}</td>
+        <td>${job.service}</td>
+        <td>${job.parts}</td>
+        <td>${job.amount}</td>
+        <td>${job.customer}</td>
+        <td>${job.rating}</td>
+      `;
+      jobBody.appendChild(tr);
+    });
+
+    // === Charts ===
+    const jobCtx = document.getElementById("jobsChart").getContext("2d");
+    new Chart(jobCtx, {
+      type: "bar",
+      data: {
+        labels: ["Apr", "May", "Jun", "Jul", "Aug", "Sep"],
+        datasets: [{
+          label: "Jobs Done",
+          data: mechanicActivity.monthlyJobs,
+          backgroundColor: "#0059b3",
+        }]
+      },
+      options: { scales: { y: { beginAtZero: true } } }
+    });
+
+    const ratingCtx = document.getElementById("ratingChart").getContext("2d");
+    new Chart(ratingCtx, {
+      type: "line",
+      data: {
+        labels: ["Apr", "May", "Jun", "Jul", "Aug", "Sep"],
+        datasets: [{
+          label: "Avg Rating",
+          data: mechanicActivity.monthlyRatings,
+          borderColor: "#ff9800",
+          backgroundColor: "rgba(255, 152, 0, 0.2)",
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        scales: { y: { beginAtZero: false, max: 5 } }
+      }
+    });
+
+    
+  const mechanicActivity = JSON.parse(localStorage.getItem("selectedMechanic")) || {
+    name: "Unknown Mechanic",
+    specialization: "N/A",
+    experience: "N/A",
+    jobsDone: 0,
+    rating: 0,
+    partsUsed: 0,
+    earnings: 0
+  };
+
+  document.getElementById("mechName").textContent = mechanicActivity.name;
+  document.querySelector(".profile-info p:nth-child(2)").innerHTML = `<strong>Specialization:</strong> ${mechanicActivity.specialization}`;
+  document.querySelector(".profile-info p:nth-child(3)").innerHTML = `<strong>Experience:</strong> ${mechanicActivity.experience} years`;
+  document.getElementById("jobsDone").textContent = mechanicActivity.jobsDone;
+  document.getElementById("rating").textContent = mechanicActivity.rating;
+  document.getElementById("partsUsed").textContent = mechanicActivity.partsUsed;
+  document.getElementById("earnings").textContent = "₦" + mechanicActivity.earnings.toLocaleString();
+
+  // Example charts and dummy job data (can later be made unique per mechanic)
+  const jobCtx = document.getElementById("jobsChart").getContext("2d");
+  new Chart(jobCtx, {
+    type: "bar",
+    data: {
+      labels: ["Apr", "May", "Jun", "Jul", "Aug", "Sep"],
+      datasets: [{
+        label: "Jobs Done",
+        data: [12, 18, 20, 25, 22, 29],
+        backgroundColor: "#0059b3",
+      }]
+    },
+    options: { scales: { y: { beginAtZero: true } } }
+  });
+
+  const ratingCtx = document.getElementById("ratingChart").getContext("2d");
+  new Chart(ratingCtx, {
+    type: "line",
+    data: {
+      labels: ["Apr", "May", "Jun", "Jul", "Aug", "Sep"],
+      datasets: [{
+        label: "Avg Rating",
+        data: [4.5, 4.6, 4.7, 4.8, 4.6, 4.9],
+        borderColor: "#ff9800",
+        backgroundColor: "rgba(255, 152, 0, 0.2)",
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: { scales: { y: { beginAtZero: false, max: 5 } } }
+  });
+</script>
+
+</body>
+</html>

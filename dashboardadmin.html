@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CarAid Admin Dashboard</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: #f4f6fa;
+      color: #333;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: #1e293b;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+    }
+
+    .logo {
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: #ff6600;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .sidebar a {
+      text-decoration: none;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      padding: 12px 25px;
+      gap: 15px;
+      transition: 0.3s;
+    }
+
+    .sidebar a:hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+
+    /* Top Bar */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+      background: white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .search-box {
+      background: #f1f5f9;
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .search-box input {
+      border: none;
+      background: transparent;
+      outline: none;
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .profile img {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+    }
+
+    /* Dashboard Layout */
+    .dashboard {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dashboard-content {
+      padding: 25px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 25px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+
+    .card h3 {
+      font-size: 1rem;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .summary h2 {
+      font-size: 1.8rem;
+      color: #1e293b;
+    }
+
+    .summary span {
+      font-size: 0.9rem;
+      color: #64748b;
+    }
+
+    /* Analytics */
+    .analytics-card {
+      grid-column: span 2;
+      height: 250px;
+    }
+
+    .chart-container {
+      height: 120px;
+    }
+
+    /* Management Tables */
+    .tables {
+      grid-column: span 3;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 25px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 0.9rem;
+    }
+
+    th {
+      color: #475569;
+      font-weight: 600;
+    }
+
+    .status-success {
+      color: #16a34a;
+      font-weight: 600;
+    }
+
+    .status-failed {
+      color: #dc2626;
+      font-weight: 600;
+    }
+
+    .filter {
+      float: right;
+      font-size: 0.8rem;
+      color: #64748b;
+      cursor: pointer;
+    }
+
+    /* === Floating Chat Button === */
+    .chat-button {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 55px;
+      height: 55px;
+      font-size: 22px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s ease;
+      z-index: 1000;
+    }
+
+    .chat-button:hover {
+      background: #1e40af;
+    }
+
+    /* === Chat Popup === */
+    .chat-popup {
+      position: fixed;
+      bottom: 90px;
+      right: 25px;
+      width: 320px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 999;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .chat-header {
+      background: #2563eb;
+      color: white;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-header h4 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .chat-tabs {
+      display: flex;
+    }
+
+    .chat-tabs button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: #f1f5f9;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.3s;
+    }
+
+    .chat-tabs button.active {
+      background: #2563eb;
+      color: white;
+    }
+
+    .chat-body {
+      height: 200px;
+      overflow-y: auto;
+      padding: 10px;
+      font-size: 0.9rem;
+      color: #333;
+    }
+
+    .chat-footer {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #e2e8f0;
+      background: #fafafa;
+    }
+
+    .chat-footer input {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .chat-footer button {
+      margin-left: 8px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo">CarAid</div>
+    <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    <a href="mechanics.html"><i class="fas fa-tools"></i> Mechanics</a>
+    <a href="users.html"><i class="fas fa-users"></i> Users</a>
+    <a href="payments.html"><i class="fas fa-credit-card"></i> Payments</a>
+    <a href="issues.html"><i class="fas fa-exclamation-circle"></i> Issues</a>
+    <a href="dashboardsettings.html"><i class="fas fa-cog"></i> Settings</a>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dashboard">
+    <div class="topbar">
+      <h2>Dashboard Admin</h2>
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Search...">
+      </div>
+      <div class="profile">
+        <span>Admin</span>
+        <img src="https://via.placeholder.com/35" alt="Admin">
+      </div>
+    </div>
+
+    <div class="dashboard-content">
+      <div class="card">
+        <h3>Active Mechanics</h3>
+        <div class="summary"><h2>1,200</h2><span>Mechanics</span></div>
+      </div>
+      <div class="card">
+        <h3>Users</h3>
+        <div class="summary"><h2>5,000</h2><span>Users</span></div>
+      </div>
+      <div class="card">
+        <h3>Parts Sellers</h3>
+        <div class="summary"><h2>300</h2><span>Sellers</span></div>
+      </div>
+
+      <div class="card analytics-card">
+        <h3>Ride Analytics</h3>
+        <div class="chart-container"><canvas id="analyticsChart"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h3>Revenue</h3>
+        <h2>$500,000</h2>
+        <span>Total Revenue</span>
+      </div>
+
+      <div class="tables">
+        <div class="card">
+          <h3>Mechanic Management <span class="filter">Filter ▼</span></h3>
+          <table>
+            <tr><th>Mechanic</th><th>Location</th><th>Ratings</th></tr>
+            <tr><td>Burthiga</td><td>Boneriment</td><td>12,560 ★</td></tr>
+            <tr><td>Andegelaner</td><td>Government</td><td>12,430 ★</td></tr>
+            <tr><td>Sevitga</td><td>Government</td><td>31,457 ★</td></tr>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3>User Management <span class="filter">Filter ▼</span></h3>
+          <table>
+            <tr><th>User ID</th><th>Email</th><th>Last Login</th></tr>
+            <tr><td>$20024-1679</td><td>user@mail.com</td><td>30/08/24</td></tr>
+            <tr><td>$20024-175</td><td>alex@mail.com</td><td>31/08/24</td></tr>
+            <tr><td>$20214-175</td><td>kelly@mail.com</td><td>01/09/24</td></tr>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3>Payment Management <span class="filter">Status ▼</span></h3>
+          <table>
+            <tr><th>User ID</th><th>Name</th><th>Status</th></tr>
+            <tr><td>2317-1047</td><td>Mark</td><td class="status-success">✓ Processed</td></tr>
+            <tr><td>2317-1049</td><td>James</td><td class="status-success">✓ Processed</td></tr>
+            <tr><td>2317-1152</td><td>Rose</td><td class="status-failed">✗ Failed</td></tr>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3>Issue Resolution / Support Tickets <span class="filter">Filter ▼</span></h3>
+          <table>
+            <tr><th>Ticket ID</th><th>Description</th><th>Status</th></tr>
+            <tr><td>43142-S2</td><td>Funall@markcad.com</td><td class="status-success">Resolved</td></tr>
+            <tr><td>21782-S2</td><td>Funall@work.com</td><td class="status-failed">Unresolved</td></tr>
+            <tr><td>41473-S2</td><td>Funall@touch.com</td><td class="status-failed">Pending</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Chat -->
+  <button class="chat-button" id="chatBtn"><i class="fas fa-comments"></i></button>
+
+  <div class="chat-popup" id="chatPopup">
+    <div class="chat-header">
+      <h4>Chat Room</h4>
+      <i class="fas fa-times" id="closeChat" style="cursor:pointer;"></i>
+    </div>
+    <div class="chat-tabs">
+      <button class="active" id="teamTab">My Team</button>
+      <button id="customerTab">Customers</button>
+    </div>
+    <div class="chat-body" id="chatBody">
+      <p><strong>Welcome!</strong> Choose a chat option to begin.</p>
+    </div>
+    <div class="chat-footer">
+      <input type="text" placeholder="Type a message...">
+      <button><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <script>
+    // Chart
+    const ctx = document.getElementById('analyticsChart');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+          label: 'Rides',
+          data: [100, 150, 120, 200, 180, 130],
+          backgroundColor: '#3b82f6',
+          borderRadius: 6
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false }},
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 50 } } }
+      }
+    });
+
+    // Chat toggle
+    const chatBtn = document.getElementById("chatBtn");
+    const chatPopup = document.getElementById("chatPopup");
+    const closeChat = document.getElementById("closeChat");
+    const teamTab = document.getElementById("teamTab");
+    const customerTab = document.getElementById("customerTab");
+    const chatBody = document.getElementById("chatBody");
+
+    chatBtn.onclick = () => chatPopup.style.display = "flex";
+    closeChat.onclick = () => chatPopup.style.display = "none";
+
+    teamTab.onclick = () => {
+      teamTab.classList.add("active");
+      customerTab.classList.remove("active");
+      chatBody.innerHTML = "<p><strong>Chat with Mechanics</strong><br>All active team messages appear here.</p>";
+    };
+
+    customerTab.onclick = () => {
+      customerTab.classList.add("active");
+      teamTab.classList.remove("active");
+      chatBody.innerHTML = "<p><strong>Chat with Customers</strong><br>All customer-related messages appear here.</p>";
+    };
+  </script>
+</body>
+</html>

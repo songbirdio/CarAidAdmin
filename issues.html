@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CarAid | Issues Dashboard</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Poppins", sans-serif;
+    }
+
+    body {
+      background: #f3f4f6;
+      color: #333;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #0059b3;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      position: relative;
+    }
+
+    /* === Indicator Lights === */
+    .indicator-container {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .indicator {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: gray;
+      box-shadow: 0 0 6px rgba(0,0,0,0.2);
+    }
+
+    .indicator.user-active {
+      background: #00c853; /* green */
+      box-shadow: 0 0 8px #00c853;
+    }
+
+    .indicator.mechanic-active {
+      background: #d50000; /* red */
+      box-shadow: 0 0 8px #d50000;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 25px;
+      background: #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .top-bar input {
+      width: 260px;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .issues-container {
+      padding: 30px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .issue-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-left: 6px solid #0059b3;
+      transition: transform 0.3s;
+    }
+
+    .issue-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .issue-card h3 {
+      color: #0059b3;
+      margin-bottom: 5px;
+    }
+
+    .issue-card p {
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+    }
+
+    .issue-type {
+      display: inline-block;
+      background: #eee;
+      color: #333;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 0.8rem;
+      margin-top: 6px;
+    }
+
+    .user-issue .issue-type {
+      background: #00c85333;
+      color: #00a152;
+    }
+
+    .mechanic-issue .issue-type {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .view-btn {
+      background: #0059b3;
+      color: white;
+      padding: 8px 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.3s;
+    }
+
+    .view-btn:hover {
+      background: #004080;
+    }
+
+    /* === Modal === */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 25px;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 10px;
+      text-align: left;
+    }
+
+    .modal-content h2 {
+      color: #0059b3;
+      margin-bottom: 10px;
+    }
+
+    .close-btn {
+      background: #c62828;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 12px;
+      cursor: pointer;
+      float: right;
+    }
+
+    footer {
+      background: #0059b3;
+      color: white;
+      text-align: center;
+      padding: 10px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+
+    @media (max-width: 768px) {
+      .top-bar input {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    CarAid | Issues Dashboard
+    <div class="indicator-container">
+      <div class="indicator" id="userLight" title="User Issues"></div>
+      <div class="indicator" id="mechanicLight" title="Mechanic Issues"></div>
+    </div>
+  </header>
+
+  <div class="top-bar">
+    <input type="text" id="searchIssue" placeholder="Search issues...">
+  </div>
+
+  <div class="issues-container" id="issuesContainer"></div>
+
+  <!-- === ISSUE MODAL === -->
+  <div class="modal" id="issueModal">
+    <div class="modal-content">
+      <button class="close-btn" id="closeModal">Close</button>
+      <h2 id="issueTitle"></h2>
+      <p id="issueReporter"></p>
+      <p id="issueType"></p>
+      <hr style="margin: 15px 0;">
+      <p id="issueDescription"></p>
+      <p><b>Status:</b> <span id="issueStatus"></span></p>
+    </div>
+  </div>
+
+  <footer>© 2025 CarAid Systems</footer>
+
+  <script>
+    const issuesContainer = document.getElementById("issuesContainer");
+    const issueModal = document.getElementById("issueModal");
+    const closeModal = document.getElementById("closeModal");
+    const userLight = document.getElementById("userLight");
+    const mechanicLight = document.getElementById("mechanicLight");
+
+    let issues = [
+      {
+        title: "Brake malfunction after service",
+        type: "Mechanic",
+        reporter: "Engr. Musa Ali",
+        description: "After completing the brake pad replacement, the test revealed noise when applying pressure.",
+        status: "Pending Review",
+      },
+      {
+        title: "App crash when booking a ride",
+        type: "User",
+        reporter: "Rita Johnson",
+        description: "The app closes automatically when I try to confirm my car booking.",
+        status: "Under Investigation",
+      }
+    ];
+
+    // === Render Issues ===
+    function renderIssues() {
+      issuesContainer.innerHTML = "";
+      issues.forEach((issue, index) => {
+        const card = document.createElement("div");
+        card.classList.add("issue-card");
+        card.classList.add(issue.type === "User" ? "user-issue" : "mechanic-issue");
+        card.innerHTML = `
+          <h3>${issue.title}</h3>
+          <p><b>Reported by:</b> ${issue.reporter}</p>
+          <p><b>Status:</b> ${issue.status}</p>
+          <span class="issue-type">${issue.type}</span><br>
+          <button class="view-btn" onclick="viewIssue(${index})">View Details</button>
+        `;
+        issuesContainer.appendChild(card);
+      });
+      updateIndicators();
+    }
+
+    // === Indicator Lights ===
+    function updateIndicators() {
+      const hasUserIssue = issues.some(i => i.type === "User");
+      const hasMechanicIssue = issues.some(i => i.type === "Mechanic");
+
+      userLight.classList.toggle("user-active", hasUserIssue);
+      mechanicLight.classList.toggle("mechanic-active", hasMechanicIssue);
+    }
+
+    // === Modal Handling ===
+    function viewIssue(index) {
+      const issue = issues[index];
+      document.getElementById("issueTitle").textContent = issue.title;
+      document.getElementById("issueReporter").textContent = "Reporter: " + issue.reporter;
+      document.getElementById("issueType").textContent = "Type: " + issue.type;
+      document.getElementById("issueDescription").textContent = issue.description;
+      document.getElementById("issueStatus").textContent = issue.status;
+      issueModal.style.display = "flex";
+    }
+
+    closeModal.addEventListener("click", () => issueModal.style.display = "none");
+    window.addEventListener("click", e => { if (e.target === issueModal) issueModal.style.display = "none"; });
+
+    // === Search Filter ===
+    document.getElementById("searchIssue").addEventListener("input", e => {
+      const query = e.target.value.toLowerCase();
+      document.querySelectorAll(".issue-card").forEach(card => {
+        const title = card.querySelector("h3").textContent.toLowerCase();
+        card.style.display = title.includes(query) ? "block" : "none";
+      });
+    });
+
+    // === Auto New Issue (Simulated Events) ===
+    function newIssue(title, type, reporter, description, status="Pending") {
+      const newIssue = { title, type, reporter, description, status };
+      issues.unshift(newIssue);
+      renderIssues();
+    }
+
+    // Simulate new issues arriving automatically
+    setTimeout(() => {
+      newIssue("Engine overheating alert", "User", "Chidera Okoro", "My car shows overheating after last service.", "Open");
+    }, 4000);
+
+    setTimeout(() => {
+      newIssue("Missing diagnostic tool", "Mechanic", "Engr. Yemi Bello", "Diagnostic scanner not found in inventory.", "Unresolved");
+    }, 8000);
+
+    renderIssues();
+  </script>
+</body>
+</html>
